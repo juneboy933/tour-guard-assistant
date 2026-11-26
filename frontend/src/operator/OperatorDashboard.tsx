@@ -34,6 +34,8 @@ function OperatorError({ message }: { message: string | null }) {
 
 function OperatorDashboard() {
   const [operatorKey, setOperatorKey] = useState('');
+  const [operatorUnlocked, setOperatorUnlocked] = useState(false);
+  const [activePage, setActivePage] = useState<'overview' | 'setup' | 'reports' | 'tourists'>('overview');
   const [guide, setGuide] = useState<Guide | null>(null);
   const [tour, setTour] = useState<Tour | null>(null);
   const [tourist, setTourist] = useState<Tourist | null>(null);
@@ -180,16 +182,103 @@ function OperatorDashboard() {
     }
   }
 
-  return (
-    <main className="app-shell app-shell--top-aligned">
-      <div className="operator-dashboard">
-        <header className="page-header">
+  function unlockOperatorArea(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (operatorKey.trim()) setOperatorUnlocked(true);
+  }
+
+  if (!operatorUnlocked) {
+    return (
+      <main className="operator-login-shell">
+        <section className="operator-login-card">
+          <div className="operator-brand-mark">TG</div>
           <p className="eyebrow">TourGuard Operations</p>
-          <h1>Set up a safe tour.</h1>
-          <p className="welcome-copy">Create the guide, tour, and tourist link for a new tour.</p>
+          <h1>Welcome back.</h1>
+          <p className="status-copy">Enter your operator key to manage tours, tourists, and safety reports.</p>
+          <form className="operator-login-form" onSubmit={unlockOperatorArea}>
+            <label htmlFor="operator-key">Operator key</label>
+            <input
+              id="operator-key"
+              type="password"
+              value={operatorKey}
+              onChange={(event) => setOperatorKey(event.target.value)}
+              placeholder="Enter your operator key"
+              autoComplete="off"
+              autoFocus
+            />
+            <button type="submit" className="button button--primary" disabled={!operatorKey.trim()}>
+              Enter dashboard
+            </button>
+          </form>
+          <p className="form-hint">Your key stays in memory and is cleared when this page is closed.</p>
+        </section>
+      </main>
+    );
+  }
+
+  return (
+    <main className="operator-app">
+      <aside className="operator-sidebar">
+        <div className="operator-sidebar-brand">
+          <span className="operator-brand-mark operator-brand-mark--small">TG</span>
+          <span>TourGuard</span>
+        </div>
+        <p className="operator-sidebar-label">Operations</p>
+        <nav aria-label="Operator navigation">
+          {([
+            ['overview', 'Overview'],
+            ['setup', 'Tour setup'],
+            ['reports', 'Reports'],
+            ['tourists', 'Tourists'],
+          ] as const).map(([page, label]) => (
+            <button key={page} type="button" className={`sidebar-link ${activePage === page ? 'sidebar-link--active' : ''}`} onClick={() => setActivePage(page)}>
+              <span className="sidebar-dot" />
+              {label}
+            </button>
+          ))}
+        </nav>
+        <button type="button" className="sidebar-signout" onClick={() => { setOperatorUnlocked(false); setOperatorKey(''); }}>
+          Lock dashboard
+        </button>
+      </aside>
+
+      <div className="operator-main">
+        <header className="operator-topbar">
+          <div>
+            <p className="operator-kicker">Operations console</p>
+            <h1>{activePage === 'overview' ? 'Good to see you.' : activePage === 'setup' ? 'Tour setup' : activePage === 'reports' ? 'Safety reports' : 'Tourists'}</h1>
+          </div>
+          <button type="button" className="button button--quiet" onClick={() => void loadExistingData()} disabled={loadingData}>
+            {loadingData ? 'Refreshing…' : 'Refresh data'}
+          </button>
         </header>
 
-        <section className="info-card operator-key-card">
+        <div className="operator-dashboard">
+          {activePage === 'overview' && (
+            <section className="operator-overview">
+              <div className="overview-hero">
+                <div>
+                  <p className="card-label">TourGuard operations</p>
+                  <h2>Keep every tour moving safely.</h2>
+                  <p>Set up your next tour, register tourists, and stay ready to respond to safety reports.</p>
+                </div>
+                <button type="button" className="button button--primary" onClick={() => setActivePage('setup')}>Set up a tour</button>
+              </div>
+              <div className="overview-stats">
+                <div><strong>{guides.length}</strong><span>Guides loaded</span></div>
+                <div><strong>{tours.length}</strong><span>Tours loaded</span></div>
+                <div><strong>{tourists.length}</strong><span>Tourists loaded</span></div>
+                <div><strong>{reports.length}</strong><span>Reports loaded</span></div>
+              </div>
+              <section className="info-card overview-note">
+                <p className="card-label">Quick start</p>
+                <p>Use <strong>Refresh data</strong> to load existing records, or start with Tour setup to create a guide, tour, and tourist link.</p>
+              </section>
+            </section>
+          )}
+
+        {activePage === 'setup' && <>
+        <section className="info-card operator-key-card operator-session-card">
           <label htmlFor="operator-key">Operator key</label>
           <input
             id="operator-key"
@@ -330,6 +419,28 @@ function OperatorDashboard() {
             </div>
           )}
         </section>
+        </>}
+
+        {activePage === 'reports' && (
+          <section className="info-card operator-card" aria-labelledby="reports-page-title">
+            <div className="operator-section-heading">
+              <div><p className="card-label">Safety operations</p><h2 id="reports-page-title">Tour reports</h2></div>
+              <button type="button" className="button button--quiet" onClick={() => void loadReports()} disabled={!tour || !reports.length && reportsLoading}>
+                Refresh reports
+              </button>
+            </div>
+            {!tour ? <p className="form-hint">Load existing data and select a tour from Tour setup first.</p> : reports.length === 0 ? <p className="form-hint">No reports loaded for the selected tour. Use Tour setup to refresh reports.</p> : <div className="report-list">{reports.map((report) => <article className="operator-report" key={report.publicReference}><div className="operator-report-heading"><strong>{report.type}</strong><span className={`report-status report-status--${report.status.toLowerCase()}`}>{report.status}</span></div><p>{report.note || 'No note provided.'}</p><small>Reported by {report.reporter.name} · {new Date(report.createdAt).toLocaleString()}</small>{report.missingTourist && <small>Missing tourist: {report.missingTourist.name}</small>}<div className="form-actions">{report.status === 'OPEN' && <button type="button" className="button button--primary" onClick={() => void transitionReport(report.publicReference, 'acknowledge')} disabled={reportsLoading}>Acknowledge</button>}{report.status === 'ACKNOWLEDGED' && <button type="button" className="button button--primary" onClick={() => void transitionReport(report.publicReference, 'resolve')} disabled={reportsLoading}>Resolve</button>}</div></article>)}</div>}
+          </section>
+        )}
+
+        {activePage === 'tourists' && (
+          <section className="info-card operator-card" aria-labelledby="tourists-page-title">
+            <p className="card-label">People on your tours</p>
+            <h2 id="tourists-page-title">Registered tourists</h2>
+            {tourists.length === 0 ? <p className="form-hint">No tourists loaded. Select Refresh data to load records.</p> : <div className="tourist-table">{tourists.map((candidate) => <div className="tourist-row" key={candidate.publicReference}><div><strong>{candidate.name}</strong><small>{candidate.phone} · {candidate.tour?.name ?? candidate.tourId}</small></div><span className={`report-status report-status--${candidate.smsStatus.toLowerCase()}`}>{candidate.smsStatus}</span></div>)}</div>}
+          </section>
+        )}
+      </div>
       </div>
     </main>
   );
