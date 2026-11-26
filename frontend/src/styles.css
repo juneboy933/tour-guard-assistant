@@ -134,6 +134,69 @@ textarea {
   font-size: 0.78rem;
 }
 
+.operator-section-heading,
+.operator-report-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.operator-section-heading h2 {
+  margin: 0;
+  color: #163b32;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.7rem, 6vw, 2.5rem);
+}
+
+.report-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.operator-report {
+  display: grid;
+  gap: 0.45rem;
+  border-top: 1px solid rgb(23 55 47 / 12%);
+  padding-top: 1rem;
+}
+
+.operator-report p,
+.operator-report small {
+  margin: 0;
+  color: #49645b;
+  line-height: 1.5;
+}
+
+.operator-report-heading strong {
+  color: #17372f;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+}
+
+.report-status {
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.report-status--open {
+  color: #9b3d2e;
+  background: #f6dfd6;
+}
+
+.report-status--acknowledged {
+  color: #8a5d19;
+  background: #f7ebc8;
+}
+
+.report-status--resolved {
+  color: #2f7055;
+  background: #dcefe3;
+}
+
 .page-header {
   padding: 1rem 0;
 }

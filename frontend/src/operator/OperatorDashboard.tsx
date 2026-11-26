@@ -14,6 +14,17 @@ type Tourist = {
   secureLink: string;
   smsStatus: 'SENT' | 'FAILED';
 };
+type Report = {
+  publicReference: string;
+  type: 'LOST' | 'MISSING';
+  status: 'OPEN' | 'ACKNOWLEDGED' | 'RESOLVED';
+  lat: number | null;
+  lng: number | null;
+  note: string | null;
+  createdAt: string;
+  reporter: { name: string; phone: string };
+  missingTourist: { name: string; phone: string } | null;
+};
 
 function OperatorError({ message }: { message: string | null }) {
   return message ? <p className="form-error" role="alert">{message}</p> : null;
@@ -25,6 +36,8 @@ function OperatorDashboard() {
   const [tour, setTour] = useState<Tour | null>(null);
   const [tourist, setTourist] = useState<Tourist | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit<T>(action: string, path: string, body: unknown): Promise<T | null> {
@@ -87,6 +100,32 @@ function OperatorDashboard() {
     if (created) {
       setTourist(created);
       event.currentTarget.reset();
+    }
+  }
+
+  async function loadReports() {
+    if (!tour) return;
+    setReportsLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.withOperatorKey(operatorKey).request<{ data: Report[] }>(`/reports/tour/${tour.id}`);
+      setReports(response.data);
+    } catch (requestError: unknown) {
+      setError(requestError instanceof ApiError ? requestError.message : 'The reports could not be loaded.');
+    } finally {
+      setReportsLoading(false);
+    }
+  }
+
+  async function transitionReport(reportReference: string, action: 'acknowledge' | 'resolve') {
+    setReportsLoading(true);
+    setError(null);
+    try {
+      await apiClient.withOperatorKey(operatorKey).request(`/reports/${reportReference}/${action}`, { method: 'PATCH' });
+      await loadReports();
+    } catch (requestError: unknown) {
+      setError(requestError instanceof ApiError ? requestError.message : 'The report could not be updated.');
+      setReportsLoading(false);
     }
   }
 
@@ -168,6 +207,41 @@ function OperatorDashboard() {
               <p className="success-message">Tourist registered. SMS status: {tourist.smsStatus}</p>
               <a href={tourist.secureLink}>Open tourist link</a>
               <code>{tourist.secureLink}</code>
+            </div>
+          )}
+        </section>
+
+        <section className="info-card operator-card" aria-labelledby="reports-title">
+          <div className="operator-section-heading">
+            <div>
+              <p className="card-label">Step 4</p>
+              <h2 id="reports-title">Tour reports</h2>
+            </div>
+            <button type="button" className="button button--quiet" onClick={() => void loadReports()} disabled={!tour || !operatorKey || reportsLoading}>
+              {reportsLoading ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
+          {!tour ? (
+            <p className="form-hint">Create a tour first.</p>
+          ) : reports.length === 0 ? (
+            <p className="form-hint">No reports loaded for this tour. Select refresh to check.</p>
+          ) : (
+            <div className="report-list">
+              {reports.map((report) => (
+                <article className="operator-report" key={report.publicReference}>
+                  <div className="operator-report-heading">
+                    <strong>{report.type}</strong>
+                    <span className={`report-status report-status--${report.status.toLowerCase()}`}>{report.status}</span>
+                  </div>
+                  <p>{report.note || 'No note provided.'}</p>
+                  <small>Reported by {report.reporter.name} · {new Date(report.createdAt).toLocaleString()}</small>
+                  {report.missingTourist && <small>Missing tourist: {report.missingTourist.name}</small>}
+                  <div className="form-actions">
+                    {report.status === 'OPEN' && <button type="button" className="button button--primary" onClick={() => void transitionReport(report.publicReference, 'acknowledge')} disabled={reportsLoading}>Acknowledge</button>}
+                    {report.status === 'ACKNOWLEDGED' && <button type="button" className="button button--primary" onClick={() => void transitionReport(report.publicReference, 'resolve')} disabled={reportsLoading}>Resolve</button>}
+                  </div>
+                </article>
+              ))}
             </div>
           )}
         </section>
