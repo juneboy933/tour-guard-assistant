@@ -38,6 +38,7 @@ function OperatorDashboard() {
   const [busy, setBusy] = useState<string | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
+  const [retryingSms, setRetryingSms] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit<T>(action: string, path: string, body: unknown): Promise<T | null> {
@@ -129,6 +130,25 @@ function OperatorDashboard() {
     }
   }
 
+  async function retrySms() {
+    if (!tourist) return;
+    setRetryingSms(true);
+    setError(null);
+    try {
+      const response = await apiClient
+        .withOperatorKey(operatorKey)
+        .request<{ data: Pick<Tourist, 'publicReference' | 'secureLink' | 'smsStatus'> }>(
+          `/tourists/${tourist.publicReference}/sms/retry`,
+          { method: 'POST' },
+        );
+      setTourist((current) => current ? { ...current, ...response.data } : current);
+    } catch (requestError: unknown) {
+      setError(requestError instanceof ApiError ? requestError.message : 'The SMS retry failed.');
+    } finally {
+      setRetryingSms(false);
+    }
+  }
+
   return (
     <main className="app-shell app-shell--top-aligned">
       <div className="operator-dashboard">
@@ -207,6 +227,11 @@ function OperatorDashboard() {
               <p className="success-message">Tourist registered. SMS status: {tourist.smsStatus}</p>
               <a href={tourist.secureLink}>Open tourist link</a>
               <code>{tourist.secureLink}</code>
+              {tourist.smsStatus === 'FAILED' && (
+                <button type="button" className="button button--primary" onClick={() => void retrySms()} disabled={retryingSms}>
+                  {retryingSms ? 'Retrying SMS…' : 'Retry failed SMS'}
+                </button>
+              )}
             </div>
           )}
         </section>
