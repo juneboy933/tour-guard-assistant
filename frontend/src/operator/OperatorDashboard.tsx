@@ -5,6 +5,7 @@ type Guide = { name: string; phone: string; publicReference: string };
 type Tour = {
   id: string;
   name: string;
+  meetingPoint: string;
   guide: { name: string; phone: string };
 };
 type Tourist = {
@@ -269,6 +270,16 @@ function OperatorDashboard() {
                 <div><strong>{tours.length}</strong><span>Tours loaded</span></div>
                 <div><strong>{tourists.length}</strong><span>Tourists loaded</span></div>
                 <div><strong>{reports.length}</strong><span>Reports loaded</span></div>
+              </div>
+              <div className="operator-directory">
+                <section className="info-card directory-card">
+                  <p className="card-label">Available guides</p>
+                  {guides.length === 0 ? <p className="form-hint">Load existing data to view guides.</p> : <div className="directory-list">{guides.map((candidate) => <div key={candidate.publicReference}><strong>{candidate.name}</strong><small>{candidate.phone}</small></div>)}</div>}
+                </section>
+                <section className="info-card directory-card">
+                  <p className="card-label">Available tours</p>
+                  {tours.length === 0 ? <p className="form-hint">Load existing data to view tours.</p> : <div className="directory-list">{tours.map((candidate) => <div key={candidate.id}><strong>{candidate.name}</strong><small>{candidate.guide.name} · {candidate.meetingPoint}</small></div>)}</div>}
+                </section>
               </div>
               <section className="info-card overview-note">
                 <p className="card-label">Quick start</p>

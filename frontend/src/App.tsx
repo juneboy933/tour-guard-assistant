@@ -207,6 +207,20 @@ function TouristHome({
           </a>
         </section>
 
+        <section className="info-card" aria-labelledby="group-title">
+          <p className="card-label">Your group</p>
+          <h2 id="group-title">Fellow tourists</h2>
+          {context.tour.tourists.length === 0 ? (
+            <p className="form-hint">You are currently the only registered tourist on this tour.</p>
+          ) : (
+            <ul className="fellow-tourists">
+              {context.tour.tourists.map((tourist) => (
+                <li key={tourist.publicReference}>{tourist.name}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         <section className="safety-card" aria-labelledby="safety-title">
           <p className="card-label">Need help now?</p>
           <h2 id="safety-title">Report that you are lost</h2>

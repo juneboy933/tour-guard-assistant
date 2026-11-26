@@ -14,6 +14,10 @@ export type TouristContext = {
       name: string;
       phone: string;
     };
+    tourists: Array<{
+      name: string;
+      publicReference: string;
+    }>;
   };
 };
 

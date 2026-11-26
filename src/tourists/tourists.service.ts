@@ -207,9 +207,19 @@ export class TouristsService {
     }
 
     const accessToken = createHash('sha256').update(rawToken).digest('hex');
+    const touristIdentity = await this.prisma.tourist.findUnique({
+      where: { accessToken },
+      select: { id: true },
+    });
+
+    if (!touristIdentity) {
+      throw new NotFoundException('Tourist context was not found.');
+    }
+
     const tourist = await this.prisma.tourist.findUnique({
       where: { accessToken },
       select: {
+        id: true,
         name: true,
         phone: true,
         publicReference: true,
@@ -224,6 +234,14 @@ export class TouristsService {
               select: {
                 name: true,
                 phone: true,
+              },
+            },
+            tourists: {
+              where: { id: { not: touristIdentity.id } },
+              orderBy: { name: 'asc' },
+              select: {
+                name: true,
+                publicReference: true,
               },
             },
           },
@@ -248,6 +266,7 @@ export class TouristsService {
           startAt: tourist.tour.startAt,
           endAt: tourist.tour.endAt,
           guide: tourist.tour.guide,
+          tourists: tourist.tour.tourists,
         },
       },
     };

@@ -304,6 +304,33 @@ textarea {
   margin-top: 0;
 }
 
+.operator-directory {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.directory-card {
+  margin: 0;
+}
+
+.directory-list {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.directory-list div {
+  display: grid;
+  gap: 0.2rem;
+  border-top: 1px solid rgb(23 55 47 / 12%);
+  padding-top: 0.75rem;
+}
+
+.directory-list small {
+  color: #49645b;
+}
+
 .tourist-table {
   display: grid;
   gap: 0.25rem;
@@ -363,6 +390,10 @@ textarea {
 
   .overview-stats {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .operator-directory {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -557,6 +588,21 @@ dd {
   font-weight: 800;
   text-decoration-thickness: 0.12em;
   text-underline-offset: 0.2em;
+}
+
+.fellow-tourists {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fellow-tourists li {
+  border-top: 1px solid rgb(23 55 47 / 12%);
+  padding-top: 0.65rem;
+  color: #17372f;
+  font-weight: 600;
 }
 
 .safety-card {

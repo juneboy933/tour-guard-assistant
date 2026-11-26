@@ -35,6 +35,7 @@ describe('frontend foundation', () => {
             startAt: '2026-12-01T08:00:00.000Z',
             endAt: '2026-12-01T12:00:00.000Z',
             guide: { name: 'Demo Guide', phone: '+254700000001' },
+            tourists: [],
           },
         },
       }),
@@ -64,6 +65,7 @@ describe('frontend foundation', () => {
             name: 'Nairobi City Tour', description: 'A guided city tour.', meetingPoint: 'Archives',
             startAt: '2026-12-01T08:00:00.000Z', endAt: '2026-12-01T12:00:00.000Z',
             guide: { name: 'Demo Guide', phone: '+254700000001' },
+            tourists: [],
           },
         },
       }), { status: 200 }))
@@ -92,6 +94,7 @@ describe('frontend foundation', () => {
             name: 'Strict Mode Tour', description: 'A guided city tour.', meetingPoint: 'Archives',
             startAt: '2026-12-01T08:00:00.000Z', endAt: '2026-12-01T12:00:00.000Z',
             guide: { name: 'Demo Guide', phone: '+254700000001' },
+            tourists: [],
           },
         },
       }), { status: 200 }),
@@ -119,6 +122,7 @@ describe('frontend foundation', () => {
             name: 'Chat Tour', description: 'A guided city tour.', meetingPoint: 'Archives',
             startAt: '2026-12-01T08:00:00.000Z', endAt: '2026-12-01T12:00:00.000Z',
             guide: { name: 'Demo Guide', phone: '+254700000001' },
+            tourists: [],
           },
         },
       }), { status: 200 }))

@@ -45,7 +45,13 @@ Returns only the authenticated tourist, their tour, and assigned guide:
       "guide": {
         "name": "Demo Guide",
         "phone": "+254700000001"
-      }
+      },
+      "tourists": [
+        {
+          "name": "Another Tourist",
+          "publicReference": "32-character-lowercase-hex-reference"
+        }
+      ]
     }
   }
 }

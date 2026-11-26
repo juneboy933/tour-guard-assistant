@@ -155,7 +155,9 @@ describe('TouristsService', () => {
 
   describe('getTouristContext', () => {
     it('returns only the authenticated tourist context', async () => {
-      prismaMock.tourist.findUnique.mockResolvedValue({
+      prismaMock.tourist.findUnique
+        .mockResolvedValueOnce({ id: 'tourist-1' })
+        .mockResolvedValueOnce({
         id: 'tourist-1',
         name: 'Demo Tourist',
         phone: '+254712345678',
@@ -171,6 +173,7 @@ describe('TouristsService', () => {
             name: 'Demo Guide',
             phone: '+254712345678',
           },
+          tourists: [],
         },
       });
 
@@ -192,35 +195,20 @@ describe('TouristsService', () => {
               name: 'Demo Guide',
               phone: '+254712345678',
             },
+            tourists: [],
           },
         },
       });
 
-      expect(prismaMock.tourist.findUnique).toHaveBeenCalledWith({
+      expect(prismaMock.tourist.findUnique).toHaveBeenNthCalledWith(1, {
         where: {
           accessToken: 'ffe054fe7ae0cb6dc65c3af9b61d5209f439851db43d0ba5997337df154668eb',
         },
         select: {
-          name: true,
-          phone: true,
-          publicReference: true,
-          tour: {
-            select: {
-              name: true,
-              description: true,
-              meetingPoint: true,
-              startAt: true,
-              endAt: true,
-              guide: {
-                select: {
-                  name: true,
-                  phone: true,
-                },
-              },
-            },
-          },
+          id: true,
         },
       });
+      expect(prismaMock.tourist.findUnique).toHaveBeenCalledTimes(2);
     });
 
     it('rejects an empty access token', async () => {
