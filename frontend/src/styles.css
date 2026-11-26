@@ -74,6 +74,66 @@ textarea {
   padding: 2rem 0 4rem;
 }
 
+.operator-dashboard {
+  display: grid;
+  width: min(100%, 48rem);
+  gap: 1rem;
+  padding: 2rem 0 4rem;
+}
+
+.operator-key-card,
+.operator-card {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.operator-key-card label,
+.operator-form label {
+  color: #49645b;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.operator-key-card input,
+.operator-form input,
+.operator-form textarea {
+  width: 100%;
+  border: 1px solid rgb(23 55 47 / 20%);
+  border-radius: 0.8rem;
+  padding: 0.8rem;
+  color: #17372f;
+  background: #fffdf7;
+}
+
+.operator-form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.form-hint {
+  margin: 0;
+  color: #49645b;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.operator-result {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.operator-result a {
+  color: #b5653b;
+  font-weight: 800;
+}
+
+.operator-result code {
+  overflow-wrap: anywhere;
+  color: #49645b;
+  font-size: 0.78rem;
+}
+
 .page-header {
   padding: 1rem 0;
 }

@@ -71,6 +71,16 @@ export function createApiClient(fetcher?: typeof fetch) {
         },
       };
     },
+
+    withOperatorKey(operatorKey: string) {
+      return {
+        request<T>(path: string, options: RequestInit = {}): Promise<T> {
+          const headers = new Headers(options.headers);
+          headers.set('X-Operator-Key', operatorKey);
+          return createApiClient(fetcher).request<T>(path, { ...options, headers });
+        },
+      };
+    },
   };
 }
 

@@ -1,0 +1,179 @@
+import { FormEvent, useState } from 'react';
+import { ApiError, apiClient } from '../api/client';
+
+type Guide = { name: string; phone: string; publicReference: string };
+type Tour = {
+  id: string;
+  name: string;
+  guide: { name: string; phone: string };
+};
+type Tourist = {
+  name: string;
+  phone: string;
+  publicReference: string;
+  secureLink: string;
+  smsStatus: 'SENT' | 'FAILED';
+};
+
+function OperatorError({ message }: { message: string | null }) {
+  return message ? <p className="form-error" role="alert">{message}</p> : null;
+}
+
+function OperatorDashboard() {
+  const [operatorKey, setOperatorKey] = useState('');
+  const [guide, setGuide] = useState<Guide | null>(null);
+  const [tour, setTour] = useState<Tour | null>(null);
+  const [tourist, setTourist] = useState<Tourist | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit<T>(action: string, path: string, body: unknown): Promise<T | null> {
+    setBusy(action);
+    setError(null);
+    try {
+      const response = await apiClient.withOperatorKey(operatorKey).request<{ data: T }>(path, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      return response.data;
+    } catch (requestError: unknown) {
+      setError(requestError instanceof ApiError ? requestError.message : 'The operator request failed.');
+      return null;
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function createGuide(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const created = await submit<Guide>('guide', '/guides', {
+      name: form.get('name'),
+      phone: form.get('phone'),
+    });
+    if (created) {
+      setGuide(created);
+      event.currentTarget.reset();
+    }
+  }
+
+  async function createTour(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!guide) return;
+    const form = new FormData(event.currentTarget);
+    const created = await submit<Tour>('tour', '/tours', {
+      name: form.get('name'),
+      description: form.get('description'),
+      meetingPoint: form.get('meetingPoint'),
+      startAt: new Date(String(form.get('startAt'))).toISOString(),
+      endAt: new Date(String(form.get('endAt'))).toISOString(),
+      guideReference: guide.publicReference,
+    });
+    if (created) {
+      setTour(created);
+      event.currentTarget.reset();
+    }
+  }
+
+  async function createTourist(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!tour) return;
+    const form = new FormData(event.currentTarget);
+    const created = await submit<Tourist>('tourist', '/tourists', {
+      name: form.get('name'),
+      phone: form.get('phone'),
+      tourId: tour.id,
+    });
+    if (created) {
+      setTourist(created);
+      event.currentTarget.reset();
+    }
+  }
+
+  return (
+    <main className="app-shell app-shell--top-aligned">
+      <div className="operator-dashboard">
+        <header className="page-header">
+          <p className="eyebrow">TourGuard Operations</p>
+          <h1>Set up a safe tour.</h1>
+          <p className="welcome-copy">Create the guide, tour, and tourist link for a new tour.</p>
+        </header>
+
+        <section className="info-card operator-key-card">
+          <label htmlFor="operator-key">Operator key</label>
+          <input
+            id="operator-key"
+            type="password"
+            value={operatorKey}
+            onChange={(event) => setOperatorKey(event.target.value)}
+            placeholder="Enter the configured operator key"
+            autoComplete="off"
+          />
+          <p className="form-hint">Kept in memory only and cleared when this page is closed.</p>
+          <OperatorError message={error} />
+        </section>
+
+        <section className="info-card operator-card">
+          <p className="card-label">Step 1</p>
+          <h2>Create a guide</h2>
+          <form className="operator-form" onSubmit={createGuide}>
+            <label htmlFor="guide-name">Guide name</label>
+            <input id="guide-name" name="name" required placeholder="Demo Guide" />
+            <label htmlFor="guide-phone">Guide phone</label>
+            <input id="guide-phone" name="phone" required placeholder="+254700000001" />
+            <button className="button button--primary" disabled={!operatorKey || busy !== null}>
+              {busy === 'guide' ? 'Creating…' : 'Create guide'}
+            </button>
+          </form>
+          {guide && <p className="success-message">Created {guide.name}. Reference: {guide.publicReference}</p>}
+        </section>
+
+        <section className="info-card operator-card">
+          <p className="card-label">Step 2</p>
+          <h2>Create a tour</h2>
+          <form className="operator-form" onSubmit={createTour}>
+            <label htmlFor="tour-name">Tour name</label>
+            <input id="tour-name" name="name" required placeholder="Nairobi City Tour" />
+            <label htmlFor="tour-description">Description</label>
+            <textarea id="tour-description" name="description" required rows={3} placeholder="A guided city tour." />
+            <label htmlFor="tour-meeting-point">Meeting point</label>
+            <input id="tour-meeting-point" name="meetingPoint" required placeholder="Kenya National Archives" />
+            <label htmlFor="tour-start">Starts</label>
+            <input id="tour-start" name="startAt" type="datetime-local" required />
+            <label htmlFor="tour-end">Ends</label>
+            <input id="tour-end" name="endAt" type="datetime-local" required />
+            <button className="button button--primary" disabled={!guide || busy !== null}>
+              {busy === 'tour' ? 'Creating…' : 'Create tour'}
+            </button>
+          </form>
+          {!guide && <p className="form-hint">Create a guide first.</p>}
+          {tour && <p className="success-message">Created {tour.name}. Tour ID: {tour.id}</p>}
+        </section>
+
+        <section className="info-card operator-card">
+          <p className="card-label">Step 3</p>
+          <h2>Register a tourist</h2>
+          <form className="operator-form" onSubmit={createTourist}>
+            <label htmlFor="tourist-name">Tourist name</label>
+            <input id="tourist-name" name="name" required placeholder="Demo Tourist" />
+            <label htmlFor="tourist-phone">Tourist phone</label>
+            <input id="tourist-phone" name="phone" required placeholder="+254712345678" />
+            <button className="button button--primary" disabled={!tour || busy !== null}>
+              {busy === 'tourist' ? 'Registering…' : 'Register tourist'}
+            </button>
+          </form>
+          {!tour && <p className="form-hint">Create a tour first.</p>}
+          {tourist && (
+            <div className="operator-result">
+              <p className="success-message">Tourist registered. SMS status: {tourist.smsStatus}</p>
+              <a href={tourist.secureLink}>Open tourist link</a>
+              <code>{tourist.secureLink}</code>
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
+  );
+}
+
+export default OperatorDashboard;

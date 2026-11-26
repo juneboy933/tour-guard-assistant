@@ -4,6 +4,7 @@ import { createTouristSession, extractTouristToken } from './auth/session';
 import { getTouristContext, TouristContext } from './tourist/context';
 import { createLostReport, createMissingReport, getReportStatus, ReportSummary } from './tourist/reports';
 import { sendAssistantMessage } from './tourist/assistant';
+import OperatorDashboard from './operator/OperatorDashboard';
 
 function formatTourDate(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -362,6 +363,10 @@ function TouristHome({
 }
 
 function App() {
+  if (window.location.pathname === '/operator' || window.location.pathname === '/operator/') {
+    return <OperatorDashboard />;
+  }
+
   const token = extractTouristToken(window.location.pathname);
   const [context, setContext] = useState<TouristContext | null>(null);
   const [error, setError] = useState<string | null>(null);
