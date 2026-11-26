@@ -253,6 +253,22 @@ export class TouristsService {
     };
   }
 
+  async listTourists() {
+    const tourists = await this.prisma.tourist.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: {
+        name: true,
+        phone: true,
+        publicReference: true,
+        smsStatus: true,
+        tourId: true,
+        tour: { select: { name: true } },
+      },
+    });
+
+    return { status: 'ok', data: tourists };
+  }
+
   private isUniqueConstraintError(error: unknown): boolean {
     return typeof error === 'object' && error !== null && 'code' in error
       && error.code === 'P2002';

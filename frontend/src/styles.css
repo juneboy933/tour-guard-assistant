@@ -96,7 +96,8 @@ textarea {
 
 .operator-key-card input,
 .operator-form input,
-.operator-form textarea {
+.operator-form textarea,
+.operator-form select {
   width: 100%;
   border: 1px solid rgb(23 55 47 / 20%);
   border-radius: 0.8rem;
@@ -132,6 +133,19 @@ textarea {
   overflow-wrap: anywhere;
   color: #49645b;
   font-size: 0.78rem;
+}
+
+.operator-list-summary {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  border-top: 1px solid rgb(23 55 47 / 12%);
+  padding-top: 1rem;
+  color: #49645b;
+}
+
+.operator-list-summary small {
+  color: #49645b;
 }
 
 .operator-section-heading,

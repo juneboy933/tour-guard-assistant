@@ -13,6 +13,8 @@ type Tourist = {
   publicReference: string;
   secureLink: string;
   smsStatus: 'SENT' | 'FAILED';
+  tourId?: string;
+  tour?: { name: string };
 };
 type Report = {
   publicReference: string;
@@ -35,7 +37,11 @@ function OperatorDashboard() {
   const [guide, setGuide] = useState<Guide | null>(null);
   const [tour, setTour] = useState<Tour | null>(null);
   const [tourist, setTourist] = useState<Tourist | null>(null);
+  const [guides, setGuides] = useState<Guide[]>([]);
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [tourists, setTourists] = useState<Tourist[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
+  const [loadingData, setLoadingData] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [retryingSms, setRetryingSms] = useState(false);
@@ -67,6 +73,7 @@ function OperatorDashboard() {
     });
     if (created) {
       setGuide(created);
+      setGuides((current) => [created, ...current]);
       event.currentTarget.reset();
     }
   }
@@ -85,6 +92,7 @@ function OperatorDashboard() {
     });
     if (created) {
       setTour(created);
+      setTours((current) => [created, ...current]);
       event.currentTarget.reset();
     }
   }
@@ -100,6 +108,7 @@ function OperatorDashboard() {
     });
     if (created) {
       setTourist(created);
+      setTourists((current) => [created, ...current]);
       event.currentTarget.reset();
     }
   }
@@ -149,6 +158,28 @@ function OperatorDashboard() {
     }
   }
 
+  async function loadExistingData() {
+    setLoadingData(true);
+    setError(null);
+    try {
+      const operator = apiClient.withOperatorKey(operatorKey);
+      const [guideResponse, tourResponse, touristResponse] = await Promise.all([
+        operator.request<{ data: Guide[] }>('/guides'),
+        operator.request<{ data: Tour[] }>('/tours'),
+        operator.request<{ data: Tourist[] }>('/tourists'),
+      ]);
+      setGuides(guideResponse.data);
+      setTours(tourResponse.data);
+      setTourists(touristResponse.data);
+      setGuide((current) => current ?? guideResponse.data[0] ?? null);
+      setTour((current) => current ?? tourResponse.data[0] ?? null);
+    } catch (requestError: unknown) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Existing operator data could not be loaded.');
+    } finally {
+      setLoadingData(false);
+    }
+  }
+
   return (
     <main className="app-shell app-shell--top-aligned">
       <div className="operator-dashboard">
@@ -169,6 +200,9 @@ function OperatorDashboard() {
             autoComplete="off"
           />
           <p className="form-hint">Kept in memory only and cleared when this page is closed.</p>
+          <button type="button" className="button button--quiet" onClick={() => void loadExistingData()} disabled={!operatorKey || loadingData}>
+            {loadingData ? 'Loading existing data…' : 'Load existing data'}
+          </button>
           <OperatorError message={error} />
         </section>
 
@@ -191,6 +225,16 @@ function OperatorDashboard() {
           <p className="card-label">Step 2</p>
           <h2>Create a tour</h2>
           <form className="operator-form" onSubmit={createTour}>
+            <label htmlFor="existing-guide">Assigned guide</label>
+            <select
+              id="existing-guide"
+              value={guide?.publicReference ?? ''}
+              onChange={(event) => setGuide(guides.find((candidate) => candidate.publicReference === event.target.value) ?? null)}
+              required
+            >
+              <option value="">Select a guide</option>
+              {guides.map((candidate) => <option key={candidate.publicReference} value={candidate.publicReference}>{candidate.name} · {candidate.phone}</option>)}
+            </select>
             <label htmlFor="tour-name">Tour name</label>
             <input id="tour-name" name="name" required placeholder="Nairobi City Tour" />
             <label htmlFor="tour-description">Description</label>
@@ -213,6 +257,16 @@ function OperatorDashboard() {
           <p className="card-label">Step 3</p>
           <h2>Register a tourist</h2>
           <form className="operator-form" onSubmit={createTourist}>
+            <label htmlFor="existing-tour">Tour</label>
+            <select
+              id="existing-tour"
+              value={tour?.id ?? ''}
+              onChange={(event) => setTour(tours.find((candidate) => candidate.id === event.target.value) ?? null)}
+              required
+            >
+              <option value="">Select a tour</option>
+              {tours.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
+            </select>
             <label htmlFor="tourist-name">Tourist name</label>
             <input id="tourist-name" name="name" required placeholder="Demo Tourist" />
             <label htmlFor="tourist-phone">Tourist phone</label>
@@ -232,6 +286,12 @@ function OperatorDashboard() {
                   {retryingSms ? 'Retrying SMS…' : 'Retry failed SMS'}
                 </button>
               )}
+            </div>
+          )}
+          {tourists.length > 0 && (
+            <div className="operator-list-summary">
+              <strong>Registered tourists ({tourists.length})</strong>
+              {tourists.slice(0, 5).map((candidate) => <small key={candidate.publicReference}>{candidate.name} · {candidate.smsStatus}</small>)}
             </div>
           )}
         </section>

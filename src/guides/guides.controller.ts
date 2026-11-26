@@ -10,6 +10,11 @@ export class GuidesController {
         private readonly guideService: GuidesService,
     ) {}
 
+    @Get()
+    listGuides() {
+        return this.guideService.listGuides();
+    }
+
     @Get(':phone')
     findGuideByPhone(@Param('phone') phone: string) {
         return this.guideService.findGuideByPhone(phone);

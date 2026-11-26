@@ -8,6 +8,11 @@ import { ToursService } from './tours.service.js';
 export class ToursController {
   constructor(private readonly toursService: ToursService) {}
 
+  @Get()
+  listTours() {
+    return this.toursService.listTours();
+  }
+
   @Post()
   createTour(@Body() dto: createTourDto) {
     return this.toursService.createTour(dto);

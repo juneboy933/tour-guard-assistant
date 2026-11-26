@@ -17,6 +17,12 @@ import { TouristsService } from './tourists.service.js';
 export class TouristsController {
   constructor(private readonly touristsService: TouristsService) {}
 
+  @Get()
+  @UseGuards(OperatorKeyGuard)
+  listTourists() {
+    return this.touristsService.listTourists();
+  }
+
   @Post()
   @UseGuards(OperatorKeyGuard)
   addTourist(@Body() dto: addTouristDto) {

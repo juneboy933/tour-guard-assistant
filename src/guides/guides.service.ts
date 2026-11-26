@@ -78,6 +78,15 @@ export class GuidesService {
     };
     }
 
+    async listGuides() {
+        const guides = await this.prismaServices.guide.findMany({
+            orderBy: { name: 'asc' },
+            select: { name: true, phone: true, publicReference: true },
+        });
+
+        return { status: 'ok', data: guides };
+    }
+
     private isUniqueConstraintError(error: unknown): boolean {
         return typeof error === 'object' && error !== null && 'code' in error
             && error.code === 'P2002';

@@ -96,4 +96,21 @@ export class ToursService {
       data: tour,
     };
   }
+
+  async listTours() {
+    const tours = await this.prisma.tour.findMany({
+      orderBy: { startAt: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        meetingPoint: true,
+        startAt: true,
+        endAt: true,
+        guide: { select: { name: true, phone: true } },
+      },
+    });
+
+    return { status: 'ok', data: tours };
+  }
 }
