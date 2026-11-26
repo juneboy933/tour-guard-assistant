@@ -23,7 +23,9 @@ describe('AfricasTalkingSmsService', () => {
     process.env.AT_SENDER_ID = 'TourGuard';
     process.env.AT_SHORTCODE = '12345';
     sdkMocks.client.mockReturnValue({ SMS: { send: sdkMocks.send } });
-    sdkMocks.send.mockResolvedValue({ SMSMessageData: { Recipients: [] } });
+    sdkMocks.send.mockResolvedValue({
+      SMSMessageData: { Recipients: [{ statusCode: 101, status: 'Success' }] },
+    });
   });
 
   afterEach(() => {
@@ -56,6 +58,16 @@ describe('AfricasTalkingSmsService', () => {
     await expect(new AfricasTalkingSmsService().sendSms('+254712345678', 'Hello'))
       .rejects.toThrow(ServiceUnavailableException);
     expect(sdkMocks.client).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['rejected recipient', { SMSMessageData: { Recipients: [{ statusCode: 406, status: 'UserInBlacklist' }] } }],
+    ['no recipients', { SMSMessageData: { Message: 'InvalidSenderId', Recipients: [] } }],
+  ])('fails when the provider reports %s', async (_name, response) => {
+    sdkMocks.send.mockResolvedValue(response);
+
+    await expect(new AfricasTalkingSmsService().sendSms('+254712345678', 'Hello'))
+      .rejects.toThrow(ServiceUnavailableException);
   });
 
   it('maps provider failures to a safe error', async () => {
