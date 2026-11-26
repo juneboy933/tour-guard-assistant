@@ -12,6 +12,16 @@ function formatTourDate(value: string): string {
   }).format(new Date(value));
 }
 
+function formatMessageDate(value: Date): string {
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(value);
+}
+
 function WelcomeShell() {
   return (
     <main className="app-shell">
@@ -89,7 +99,7 @@ function TouristHome({
   const [statusResult, setStatusResult] = useState<ReportSummary | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; sentAt: Date }>>([]);
   const [messageInput, setMessageInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -144,12 +154,12 @@ function TouristHome({
 
     setChatLoading(true);
     setChatError(null);
-    setMessages((current) => [...current, { role: 'user', content: trimmedMessage }]);
+    setMessages((current) => [...current, { role: 'user', content: trimmedMessage, sentAt: new Date() }]);
     setMessageInput('');
 
     try {
       const response = await onSendMessage(trimmedMessage);
-      setMessages((current) => [...current, { role: 'assistant', content: response }]);
+      setMessages((current) => [...current, { role: 'assistant', content: response, sentAt: new Date() }]);
     } catch (error: unknown) {
       setChatError(error instanceof ApiError ? error.message : 'The assistant is temporarily unavailable.');
     } finally {
@@ -322,7 +332,8 @@ function TouristHome({
             <div className="chat-log" role="log" aria-live="polite">
               {messages.map((message, index) => (
                 <p key={`${message.role}-${index}`} className={`chat-message chat-message--${message.role}`}>
-                  {message.content}
+                  <span>{message.content}</span>
+                  <time dateTime={message.sentAt.toISOString()}>{formatMessageDate(message.sentAt)}</time>
                 </p>
               ))}
             </div>
