@@ -434,11 +434,38 @@ function OperatorDashboard() {
         )}
 
         {activePage === 'tourists' && (
-          <section className="info-card operator-card" aria-labelledby="tourists-page-title">
-            <p className="card-label">People on your tours</p>
-            <h2 id="tourists-page-title">Registered tourists</h2>
-            {tourists.length === 0 ? <p className="form-hint">No tourists loaded. Select Refresh data to load records.</p> : <div className="tourist-table">{tourists.map((candidate) => <div className="tourist-row" key={candidate.publicReference}><div><strong>{candidate.name}</strong><small>{candidate.phone} · {candidate.tour?.name ?? candidate.tourId}</small></div><span className={`report-status report-status--${candidate.smsStatus.toLowerCase()}`}>{candidate.smsStatus}</span></div>)}</div>}
-          </section>
+          <>
+            <section className="info-card operator-card" aria-labelledby="add-tourist-title">
+              <p className="card-label">Add to a tour</p>
+              <h2 id="add-tourist-title">Register another tourist</h2>
+              <form className="operator-form" onSubmit={createTourist}>
+                <label htmlFor="tourist-page-tour">Tour</label>
+                <select
+                  id="tourist-page-tour"
+                  value={tour?.id ?? ''}
+                  onChange={(event) => setTour(tours.find((candidate) => candidate.id === event.target.value) ?? null)}
+                  required
+                >
+                  <option value="">Select a tour</option>
+                  {tours.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.name}</option>)}
+                </select>
+                <label htmlFor="tourist-page-name">Tourist name</label>
+                <input id="tourist-page-name" name="name" required placeholder="Tourist name" />
+                <label htmlFor="tourist-page-phone">Tourist phone</label>
+                <input id="tourist-page-phone" name="phone" required placeholder="+254712345678" />
+                <button className="button button--primary" disabled={!tour || busy !== null}>
+                  {busy === 'tourist' ? 'Registering…' : 'Register tourist'}
+                </button>
+              </form>
+              {!tour && <p className="form-hint">Load data and select a tour first.</p>}
+            </section>
+
+            <section className="info-card operator-card" aria-labelledby="tourists-page-title">
+              <p className="card-label">People on your tours</p>
+              <h2 id="tourists-page-title">Registered tourists</h2>
+              {tourists.length === 0 ? <p className="form-hint">No tourists loaded. Select Refresh data to load records.</p> : <div className="tourist-table">{tourists.map((candidate) => <div className="tourist-row" key={candidate.publicReference}><div><strong>{candidate.name}</strong><small>{candidate.phone} · {candidate.tour?.name ?? candidate.tourId}</small></div><span className={`report-status report-status--${candidate.smsStatus.toLowerCase()}`}>{candidate.smsStatus}</span></div>)}</div>}
+            </section>
+          </>
         )}
       </div>
       </div>
