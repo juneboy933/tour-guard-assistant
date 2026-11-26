@@ -22,6 +22,25 @@ function formatMessageDate(value: Date): string {
   }).format(value);
 }
 
+function formatRelativeMessageTime(value: Date, now: Date): string {
+  const elapsedSeconds = Math.max(0, Math.floor((now.getTime() - value.getTime()) / 1000));
+  if (elapsedSeconds < 60) {
+    return `${elapsedSeconds} second${elapsedSeconds === 1 ? '' : 's'} ago`;
+  }
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes} minute${elapsedMinutes === 1 ? '' : 's'} ago`;
+  }
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) {
+    return `${elapsedHours} hour${elapsedHours === 1 ? '' : 's'} ago`;
+  }
+
+  return formatMessageDate(value);
+}
+
 function WelcomeShell() {
   return (
     <main className="app-shell">
@@ -100,9 +119,15 @@ function TouristHome({
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string; sentAt: Date }>>([]);
+  const [now, setNow] = useState(() => new Date());
   const [messageInput, setMessageInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   async function submitLostReport() {
     setSubmitting(true);
@@ -333,7 +358,9 @@ function TouristHome({
               {messages.map((message, index) => (
                 <p key={`${message.role}-${index}`} className={`chat-message chat-message--${message.role}`}>
                   <span>{message.content}</span>
-                  <time dateTime={message.sentAt.toISOString()}>{formatMessageDate(message.sentAt)}</time>
+                  <time dateTime={message.sentAt.toISOString()} title={formatMessageDate(message.sentAt)}>
+                    {formatRelativeMessageTime(message.sentAt, now)}
+                  </time>
                 </p>
               ))}
             </div>
