@@ -1,0 +1,92 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generator/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ReportStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum ReportType {
+  LOST
+  MISSING
+}
+
+enum SmsStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Guide {
+  id    String @id @default(uuid())
+  name  String
+  phone String @unique
+  publicReference String @unique
+  tours Tour[]
+}
+
+model Tour {
+  id           String   @id @default(uuid())
+  name         String
+  description  String
+  meetingPoint String
+  startAt      DateTime
+  endAt        DateTime
+  createdAt    DateTime @default(now())
+
+  guideId String
+  guide   Guide  @relation(fields: [guideId], references: [id])
+
+  tourists Tourist[]
+  reports  Report[]
+}
+
+model Tourist {
+  id          String   @id @default(uuid())
+  name        String
+  phone       String
+  accessToken String   @unique
+  publicReference String @unique
+  smsStatus SmsStatus @default(PENDING)
+  smsSentAt DateTime?
+  smsFailureReason String?
+  createdAt   DateTime @default(now())
+
+  tourId String
+  tour   Tour   @relation(fields: [tourId], references: [id])
+
+  reportsField Report[] @relation("Reporter")
+  reportsAbout Report[] @relation("MissingTourist")
+
+  @@unique([tourId, phone])
+}
+
+model Report {
+  id        String       @id @default(uuid())
+  publicReference String  @unique
+  status    ReportStatus @default(OPEN)
+  type      ReportType
+  lat       Float?
+  lng       Float?
+  note      String?
+  createdAt DateTime     @default(now())
+
+  reporterId String
+  reporter   Tourist @relation("Reporter", fields: [reporterId], references: [id])
+
+  missingTouristId String?
+  missingTourist   Tourist? @relation("MissingTourist", fields: [missingTouristId], references: [id])
+
+  tourId String
+  tour   Tour   @relation(fields: [tourId], references: [id])
+
+  @@index([tourId, status, createdAt])
+}

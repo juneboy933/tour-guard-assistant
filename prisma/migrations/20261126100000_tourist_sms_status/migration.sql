@@ -1,0 +1,6 @@
+CREATE TYPE "SmsStatus" AS ENUM ('PENDING', 'SENT', 'FAILED');
+
+ALTER TABLE "Tourist"
+ADD COLUMN "smsStatus" "SmsStatus" NOT NULL DEFAULT 'PENDING',
+ADD COLUMN "smsSentAt" TIMESTAMP(3),
+ADD COLUMN "smsFailureReason" TEXT;
