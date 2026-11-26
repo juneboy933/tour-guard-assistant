@@ -3,6 +3,7 @@ import { ApiError } from './api/client';
 import { createTouristSession, extractTouristToken } from './auth/session';
 import { getTouristContext, TouristContext } from './tourist/context';
 import { createLostReport, createMissingReport, getReportStatus, ReportSummary } from './tourist/reports';
+import { sendAssistantMessage } from './tourist/assistant';
 
 function formatTourDate(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -65,11 +66,13 @@ function TouristHome({
   onReportLost,
   onReportMissing,
   onGetReportStatus,
+  onSendMessage,
 }: {
   context: TouristContext;
   onReportLost: (note: string) => Promise<ReportSummary>;
   onReportMissing: (reference: string, note: string) => Promise<ReportSummary>;
   onGetReportStatus: (reference: string) => Promise<ReportSummary>;
+  onSendMessage: (message: string) => Promise<string>;
 }) {
   const [reportOpen, setReportOpen] = useState(false);
   const [note, setNote] = useState('');
@@ -86,6 +89,10 @@ function TouristHome({
   const [statusResult, setStatusResult] = useState<ReportSummary | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
+  const [messageInput, setMessageInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   async function submitLostReport() {
     setSubmitting(true);
@@ -128,6 +135,25 @@ function TouristHome({
       setStatusError(error instanceof ApiError ? error.message : 'We could not check that report.');
     } finally {
       setStatusLoading(false);
+    }
+  }
+
+  async function sendMessage(message = messageInput) {
+    const trimmedMessage = message.trim();
+    if (!trimmedMessage || chatLoading) return;
+
+    setChatLoading(true);
+    setChatError(null);
+    setMessages((current) => [...current, { role: 'user', content: trimmedMessage }]);
+    setMessageInput('');
+
+    try {
+      const response = await onSendMessage(trimmedMessage);
+      setMessages((current) => [...current, { role: 'assistant', content: response }]);
+    } catch (error: unknown) {
+      setChatError(error instanceof ApiError ? error.message : 'The assistant is temporarily unavailable.');
+    } finally {
+      setChatLoading(false);
     }
   }
 
@@ -281,6 +307,43 @@ function TouristHome({
             </div>
           )}
         </section>
+
+        <section className="info-card chat-card" aria-labelledby="assistant-title">
+          <p className="card-label">Need help?</p>
+          <h2 id="assistant-title">Ask TourGuard</h2>
+          <div className="suggested-prompts" aria-label="Suggested questions">
+            {['Where is the meeting point?', 'How do I contact my guide?'].map((prompt) => (
+              <button key={prompt} type="button" className="prompt-button" onClick={() => void sendMessage(prompt)} disabled={chatLoading}>
+                {prompt}
+              </button>
+            ))}
+          </div>
+          {messages.length > 0 && (
+            <div className="chat-log" role="log" aria-live="polite">
+              {messages.map((message, index) => (
+                <p key={`${message.role}-${index}`} className={`chat-message chat-message--${message.role}`}>
+                  {message.content}
+                </p>
+              ))}
+            </div>
+          )}
+          {chatError && <p className="form-error" role="alert">{chatError}</p>}
+          <form className="chat-form" onSubmit={(event) => { event.preventDefault(); void sendMessage(); }}>
+            <label htmlFor="assistant-message">Your question</label>
+            <div className="chat-input-row">
+              <input
+                id="assistant-message"
+                value={messageInput}
+                onChange={(event) => setMessageInput(event.target.value)}
+                maxLength={2000}
+                placeholder="Ask about your tour…"
+              />
+              <button type="submit" className="button button--primary" disabled={chatLoading || !messageInput.trim()}>
+                {chatLoading ? 'Sending…' : 'Send'}
+              </button>
+            </div>
+          </form>
+        </section>
       </div>
     </main>
   );
@@ -317,6 +380,13 @@ function App() {
     return response.data;
   }
 
+  async function handleSendMessage(message: string): Promise<string> {
+    const accessToken = session.get()?.accessToken;
+    if (!accessToken) throw new Error('Your secure session has expired.');
+    const response = await sendAssistantMessage(accessToken, message);
+    return response.message;
+  }
+
   useEffect(() => {
     const accessToken = session.get()?.accessToken;
     if (!accessToken) return;
@@ -351,6 +421,7 @@ function App() {
       onReportLost={handleLostReport}
       onReportMissing={handleMissingReport}
       onGetReportStatus={handleGetReportStatus}
+      onSendMessage={handleSendMessage}
     />
   );
 }

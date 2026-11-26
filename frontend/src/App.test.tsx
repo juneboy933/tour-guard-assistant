@@ -107,4 +107,29 @@ describe('frontend foundation', () => {
     expect(fetchMock).toHaveBeenCalled();
     fetchMock.mockRestore();
   });
+
+  it('sends a suggested question and displays the assistant response', async () => {
+    window.history.replaceState({}, '', '/tourist/chat-token');
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        status: 'ok',
+        data: {
+          name: 'Chat Tourist', phone: '+254712345678', publicReference: 'a'.repeat(32),
+          tour: {
+            name: 'Chat Tour', description: 'A guided city tour.', meetingPoint: 'Archives',
+            startAt: '2026-12-01T08:00:00.000Z', endAt: '2026-12-01T12:00:00.000Z',
+            guide: { name: 'Demo Guide', phone: '+254700000001' },
+          },
+        },
+      }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ message: 'Meet at the Kenya National Archives.' }), { status: 200 }));
+
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: /welcome, chat tourist/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /where is the meeting point/i }));
+
+    expect(await screen.findByText('Meet at the Kenya National Archives.')).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    fetchMock.mockRestore();
+  });
 });
