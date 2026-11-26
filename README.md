@@ -86,6 +86,8 @@ npm run start:dev
 
 The API is available at `http://localhost:3004/api/v1`.
 
+The backend allows browser requests from the origins listed in `FRONTEND_ORIGIN`. For local development, the default is `http://localhost:5173`. Set this to the deployed frontend origin in production; multiple origins can be comma-separated.
+
 ## Frontend setup
 
 In a second terminal:
